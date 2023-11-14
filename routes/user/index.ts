@@ -5,20 +5,23 @@ import bodyParser from 'body-parser'
 var express = require('express')
 var cors = require('cors')
 var app = express()
+const router = express.Router();
 app.use(cors())
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
-const router = express.Router();
+
+router.use(cors())
+router.use(bodyParser.json())
+router.use(bodyParser.urlencoded({ extended: true }))
 const prisma = new PrismaClient()
 
 router.get('/findAllUser', async function (req: Request, res: Response, next: NextFunction) {
     const allUsers = await prisma.user.findMany({
         include: {
             address: true,
-            company: true,
-          },
+            company: true
+        },
     })
-    console.log(allUsers)
     res.json({ user: allUsers })
 })
 
@@ -43,34 +46,44 @@ router.get('/getUserById/:id', async function (req: Request, res: Response, next
 })
 
 router.post('/createUser', async function (req: Request, res: Response, next: NextFunction) {
-    console.log(req.body)
-    const user = await prisma.user.create({
-        data: req.body
+    var user = req.body.user;
+    var address = req.body.address;
+    const geo = req.body.geo;
+    const company = req.body.company;
+    const geoRes = await prisma.geo.create({
+        data: geo
     })
-    console.log(user);
-    res.json({ user })
+    address.geoId = geoRes.id;
+    const addressRes = await prisma.address.create({
+        data: address
+    })
+    const companyRes = await prisma.company.create({
+        data: company
+    })
+
+    user.addressId = addressRes.id;
+    user.companyId = companyRes.id;
+    const userRes = await prisma.user.create({
+        data: user
+    })
+    res.json({ userRes })
 })
 
 router.put('/updateUser/:userId', async function (req: Request, res: Response, next: NextFunction) {
     const userId = req.params.userId;
-    console.log(userId)
     const user = await prisma.user.update({
         where: { id: parseInt(userId) },
         data: req.body
     })
-
-    console.log(user);
     res.json({ user })
 })
 
 router.patch('/updateEmailByUserId/:userId', async function (req: Request, res: Response, next: NextFunction) {
     const userId = req.params.userId;
-    console.log(userId)
     const user = await prisma.user.update({
         where: { id: parseInt(userId) },
         data: req.body
     })
-    console.log(user);
     res.json({ user })
 })
 
@@ -79,7 +92,6 @@ router.delete('/deleteUserById/:userId', async function (req: Request, res: Resp
     const user = await prisma.user.delete({
         where: { id: parseInt(userId) }
     })
-    console.log(user);
     res.json({ user })
 })
 

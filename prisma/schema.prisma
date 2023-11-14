@@ -21,6 +21,7 @@ model User {
   website     String
   company     Company?   @relation(fields: [companyId], references: [id])
   companyId   Int
+  post        Post[]
 }
 
 model Address{
@@ -54,4 +55,5 @@ model Post {
   userId    Int
   title     String   @db.VarChar(255)
   body      String   @db.Text
+  user      User    @relation(fields: [userId], references: [id])
 }
